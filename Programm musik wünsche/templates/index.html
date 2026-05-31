@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Song Auswahl</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #121212;
+    color: white;
+    margin: 0;
+    padding: 12px;
+    padding-bottom: 90px;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 10px;
+}
+
+#search {
+    width: 100%;
+    padding: 18px;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.song {
+    display: flex;
+    align-items: center;
+    background: #1e1e1e;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+}
+
+.song-left {
+    display: grid;
+    grid-template-columns: 40px 70px 1fr;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+}
+
+.song input[type="radio"] {
+    transform: scale(1.6);
+}
+
+.song img {
+    width: 70px;
+    height: 70px;
+}
+
+#addButton {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    font-size: 22px;
+    background: green;
+    color: white;
+    border: none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Musikplaylist</h1>
+
+<input id="search" placeholder="Song suchen..." oninput="searchSongs()">
+
+<div id="results"></div>
+
+<button id="addButton" onclick="addSong()">Song hinzufügen</button>
+
+<script>
+let songs = [];
+
+async function searchSongs() {
+    const q = document.getElementById('search').value;
+    if (!q) return;
+
+    const res = await fetch('/search?q=' + q);
+    songs = await res.json();
+
+    document.getElementById('results').innerHTML = songs.map((song, i) => `
+        <div class="song">
+            <div class="song-left">
+                <input type="radio" name="song" value="${i}">
+                <img src="${song.cover}">
+                <span>${song.title} - ${song.artist}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function addSong() {
+    const selected = document.querySelector('input[name="song"]:checked');
+    if (!selected) return alert("Wähle einen Song");
+
+    const song = songs[selected.value];
+
+    const res = await fetch('/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({songs: [song]})
+    });
+
+    const data = await res.json();
+
+    // Große visuelle Bestätigung erstellen
+    const confirmation = document.createElement("div");
+    confirmation.innerText = "✅ DER SONG WURDE HINZUGEFÜGT";
+    confirmation.style.position = "fixed";
+    confirmation.style.top = "0";
+    confirmation.style.left = "0";
+    confirmation.style.width = "100%";
+    confirmation.style.height = "100%";
+    confirmation.style.background = "rgba(0,0,0,0.9)";
+    confirmation.style.color = "white";
+    confirmation.style.display = "flex";
+    confirmation.style.alignItems = "center";
+    confirmation.style.justifyContent = "center";
+    confirmation.style.fontSize = "40px";
+    confirmation.style.fontWeight = "bold";
+    confirmation.style.zIndex = "9999";
+    confirmation.style.textAlign = "center";
+
+    document.body.appendChild(confirmation);
+
+    // Nach 2 Sekunden wieder entfernen + reload
+    setTimeout(() => {
+        confirmation.remove();
+        location.reload();
+    }, 2000);
+}
+</script>
+
+</body>
+</html>

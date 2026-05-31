@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playlist</title>
+
+<style>
+body {
+    background: black;
+    color: white;
+    font-family: Arial;
+}
+
+.song {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #222;
+}
+
+.song-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.song img {
+    width: 70px;
+    height: 70px;
+}
+
+input[type="checkbox"] {
+    transform: scale(1.5);
+}
+</style>
+</head>
+
+<body>
+
+<h2 style="text-align:center;">Playlist</h2>
+
+<div id="list"></div>
+
+<script>
+async function loadQueue() {
+    const res = await fetch('/get_queue');
+    const songs = await res.json();
+
+    document.getElementById('list').innerHTML = songs.map(song => `
+        <div class="song">
+            <div class="song-left">
+                <input type="checkbox" onchange="removeSong('${song.id}')">
+                <img src="${song.cover}">
+                <div>
+                    <div>${song.title}</div>
+                    <div>${song.artist} (${song.bpm} BPM)</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function removeSong(id) {
+    await fetch('/remove', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id})
+    });
+
+    loadQueue();
+}
+
+setInterval(loadQueue, 3000);
+loadQueue();
+</script>
+
+</body>
+</html>
